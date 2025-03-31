@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+{% block title %}Home - Password Strength Analyzer{% endblock %}
+
+{% block content %}
+
+<!-- Hero Section -->
+<section class="text-center py-14 px-4 sm:px-6 max-w-4xl mx-auto">
+  <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3 leading-tight">
+    🔐 AI-Powered Password Strength Analyzer
+  </h1>
+  <p class="text-base sm:text-lg text-gray-500">
+    Leverage Machine Learning and GenAI to analyze your password and receive smart, actionable tips in real-time.
+  </p>
+</section>
+
+<!-- Password Input Card -->
+<section class="max-w-3xl mx-auto bg-white p-6 sm:p-8 rounded-3xl shadow-xl mb-6 border border-gray-200">
+  <h2 class="text-xl sm:text-2xl font-semibold text-gray-800 mb-4">🔎 Check Your Password</h2>
+
+  <div class="space-y-5">
+    <!-- Input Field with Eye Icon -->
+    <div class="relative">
+      <input id="password-input" type="password" placeholder="Enter your password"
+        class="w-full p-4 pr-12 border border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-blue-400 transition-all duration-200 shadow-sm text-base sm:text-lg" />
+      <button id="toggle-password" type="button"
+        class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none">
+        <svg id="eye-icon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+          viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Buttons -->
+    <div class="flex flex-col sm:flex-row gap-3">
+      <button id="unpredictable-btn"
+        class="flex-1 bg-gradient-to-r from-rose-500 to-pink-600 text-white py-2 px-4 rounded-xl text-sm font-semibold hover:shadow-lg hover:scale-[1.02] transition">
+        🎲 Make It Unpredictable
+      </button>
+
+      <button id="remember-btn"
+        class="flex-1 hidden bg-gradient-to-r from-indigo-500 to-blue-600 text-white py-2 px-4 rounded-xl text-sm font-semibold hover:shadow-lg hover:scale-[1.02] transition">
+        🧠 Generate Remember Phrase
+      </button>
+    </div>
+
+    <div class="flex flex-col gap-2">
+      <button id="use-password-btn"
+        class="hidden bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm hover:bg-emerald-700 transition">
+        ✅ Use Password
+      </button>
+      <p id="used-warning" class="hidden text-sm text-red-500 mt-1"></p>
+    </div>
+  </div>
+</section>
+
+<!-- Remember Phrase Output -->
+<section id="remember-output-card"
+  class="max-w-3xl mx-auto bg-indigo-50 p-6 rounded-3xl shadow-md border border-indigo-200 mb-12 hidden">
+  <h2 class="text-lg font-semibold text-indigo-700 mb-2">🧠 Memory Hook</h2>
+  <p id="remember-output" class="text-gray-700 italic"></p>
+</section>
+
+<!-- Results Grid -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto px-4 sm:px-6 mb-16">
+
+  <!-- Rule-Based Score -->
+  <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-200 text-center">
+    <h3 class="font-semibold text-lg mb-2 text-gray-700">📊 Rule-Based Score</h3>
+    <p id="score-text" class="text-xl font-bold mb-3 text-gray-800">0%</p>
+    <div class="h-3 bg-gray-200 rounded-full mb-4 overflow-hidden">
+      <div id="score-bar" class="h-full rounded-full w-0 bg-gray-400 transition-all duration-300"></div>
+    </div>
+    <div class="mt-6 text-left">
+      <h4 class="font-semibold text-gray-700 mb-2">⏱️ Estimated Time to Crack</h4>
+      <ul id="crack-times" class="text-sm space-y-1 text-gray-600">
+        <li>🚦 Online (throttled): <span id="online-throttled">—</span></li>
+        <li>⚡ Online (unthrottled): <span id="online-unthrottled">—</span></li>
+        <li>🐢 Offline (slow hash): <span id="offline-slow">—</span></li>
+        <li>🚀 Offline (fast hash): <span id="offline-fast">—</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Feedback -->
+  <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-200">
+    <h3 class="font-semibold text-lg mb-3 text-gray-700">📝 Feedback</h3>
+    <ul id="feedback-list" class="list-disc pl-5 text-sm space-y-2 text-gray-600">
+      <li>Start typing a password to get real-time feedback.</li>
+    </ul>
+  </div>
+
+  <!-- Suggestions -->
+  <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-200">
+    <h3 class="font-semibold text-lg mb-3 text-gray-700">✨ Stronger Suggestions</h3>
+    <div id="ai-suggestions" class="space-y-3 text-sm">
+      <p class="text-gray-400 italic">Generating secure suggestions...</p>
+    </div>
+  </div>
+</section>
+
+<!-- Charts -->
+<section class="w-full px-4 sm:px-6 py-10">
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Bar Chart -->
+    <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-200">
+      <h3 class="font-semibold text-lg mb-4 text-gray-700">🕒 Time to Crack (Estimates)</h3>
+      <div class="w-full h-64">
+        <canvas id="crackTimeChart" class="w-full h-full"></canvas>
+      </div>
+    </div>
+
+    <!-- Pie Chart -->
+    <div class="bg-white p-6 rounded-3xl shadow-xl border border-gray-200">
+      <h3 class="font-semibold text-lg mb-4 text-gray-700 text-center">🔢 Password Composition</h3>
+      <div class="w-full h-64 flex items-center justify-center">
+        <canvas id="compositionChart" class="max-w-[300px] w-full h-full"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Welcome Popup Card -->
+<!-- Welcome Popup Card (Large) -->
+<div id="intro-popup" class="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center px-4">
+  <div class="bg-white rounded-3xl shadow-2xl max-w-3xl w-full p-8 sm:p-12 text-center animate-fade-in">
+    
+    <!-- Logo -->
+    <img src="https://images.icon-icons.com/2699/PNG/512/barclays_logo_icon_168534.png"
+         alt="Barclays Logo"
+         class="w-20 sm:w-24 mx-auto mb-4" />
+
+    <!-- Title -->
+    <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-4">
+      Barclays Hack-O-Hire Hackathon
+    </h2>
+
+    <!-- Description -->
+    <p class="text-gray-600 text-base sm:text-lg max-w-2xl mx-auto mb-6">
+      Build an AI-powered Password Strength Analyzer using cutting-edge Machine Learning and GenAI to help users create strong, secure, and memorable passwords for the digital world.
+    </p>
+
+    <!-- Start Button -->
+    <button id="start-btn"
+      class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-xl text-base sm:text-lg transition">
+       Get Started
+    </button>
+  </div>
+</div>
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const input = document.getElementById("password-input");
+  const bar = document.getElementById("score-bar");
+  const scoreText = document.getElementById("score-text");
+  const feedbackList = document.getElementById("feedback-list");
+  const suggestionsContainer = document.getElementById("ai-suggestions");
+
+  const rememberBtn = document.getElementById("remember-btn");
+  const rememberOutput = document.getElementById("remember-output");
+  const rememberOutputCard = document.getElementById("remember-output-card");
+  const heatmapIndicator = document.getElementById("heatmap-indicator");
+
+  const usePasswordBtn = document.getElementById("use-password-btn");
+  const usedWarning = document.getElementById("used-warning");
+
+
+  const crackTimeElements = {
+    "online-throttled": document.getElementById("online-throttled"),
+    "online-unthrottled": document.getElementById("online-unthrottled"),
+    "offline-slow": document.getElementById("offline-slow"),
+    "offline-fast": document.getElementById("offline-fast")
+  };
+
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  function getColor(score) {
+    if (score >= 85) return "bg-green-500";
+    if (score >= 60) return "bg-yellow-400";
+    return "bg-red-500";
+  }
+
+  input.addEventListener("input", () => {
+    const password = input.value;
+  
+    rememberBtn.classList.add("hidden");
+    rememberOutputCard.classList.add("hidden");
+    usedWarning.classList.add("hidden");
+    usePasswordBtn.classList.add("hidden");
+  
+    if (password.length < 8) {
+      scoreText.textContent = "0%";
+      bar.className = "h-full rounded-full bg-gray-400 w-0";
+      feedbackList.innerHTML = "<li>Password must be at least 8 characters.</li>";
+      Object.values(crackTimeElements).forEach(el => el.textContent = "—");
+      suggestionsContainer.innerHTML = "<p class='text-gray-400 italic'>Password too short.</p>";
+      return;
+    }
+  
+    fetch("/analyze-password/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+      },
+      body: JSON.stringify({ password: password, username: "guest" })
+    })
+      .then(res => res.json())
+      .then(data => {
+        const score = data.Rule_Based_Score;
+        scoreText.textContent = `${score}%`;
+        bar.className = `h-full rounded-full ${getColor(score)} transition-all duration-500`;
+        bar.style.width = `${score}%`;
+  
+        // Show use-password button if score is 80 or more
+        if (score >= 80) {
+          usePasswordBtn.classList.remove("hidden");
+          usePasswordBtn.dataset.password = password;
+        } else {
+          usePasswordBtn.classList.add("hidden");
+        }
+  
+        // Feedback
+        feedbackList.innerHTML = "";
+        if (data.Rule_Violations.length > 0) {
+          data.Rule_Violations.forEach(rule => {
+            const li = document.createElement("li");
+            li.textContent = rule;
+            feedbackList.appendChild(li);
+          });
+        } else {
+          const li = document.createElement("li");
+          li.textContent = "✅ Great job! No major rule violations.";
+          feedbackList.appendChild(li);
+        }
+  
+        // Crack times
+        const times = data.ZXCVBN_CrackTimes || {};
+        crackTimeElements["online-throttled"].textContent = times.online_throttling_100_per_hour || "Not available";
+        crackTimeElements["online-unthrottled"].textContent = times.online_no_throttling_10_per_second || "Not available";
+        crackTimeElements["offline-slow"].textContent = times.offline_slow_hashing_1e4_per_second || "Not available";
+        crackTimeElements["offline-fast"].textContent = times.offline_fast_hashing_1e10_per_second || "Not available";
+  
+        updateCharts(password, times);
+  
+        // AI Suggestions
+        suggestionsContainer.innerHTML = "";
+        if (data.AI_Password_Suggestions && Array.isArray(data.AI_Password_Suggestions)) {
+          data.AI_Password_Suggestions.forEach(suggestion => {
+            const cleaned = suggestion.replace(/^\s*\d+[\.\)]\s*/, '');
+  
+            const div = document.createElement("div");
+            div.className = "bg-gray-50 p-4 rounded-xl hover:bg-blue-50 transition cursor-pointer";
+            div.innerHTML = `<strong class="text-gray-800">${cleaned}</strong><p class="text-gray-500">Click to use</p>`;
+  
+            div.addEventListener("click", () => {
+              input.value = cleaned;
+              input.dispatchEvent(new Event("input"));
+              rememberBtn.classList.remove("hidden");
+              rememberBtn.dataset.password = cleaned;
+              rememberOutputCard.classList.add("hidden");
+              rememberOutput.textContent = "";
+            });
+  
+            suggestionsContainer.appendChild(div);
+          });
+        } else {
+          suggestionsContainer.innerHTML = "<p class='text-red-400'>No suggestions available.</p>";
+        }
+      });
+  });
+  
+
+  // Toggle password visibility
+  const toggleBtn = document.getElementById("toggle-password");
+  const eyeIcon = document.getElementById("eye-icon");
+  let isVisible = false;
+
+  toggleBtn.addEventListener("click", () => {
+    isVisible = !isVisible;
+    input.type = isVisible ? "text" : "password";
+    eyeIcon.innerHTML = isVisible
+      ? `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+           d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.956 9.956 0 012.147-3.328M9.88 9.88a3 3 0 104.24 4.24M3 3l18 18" />`
+      : `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+           d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+           d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />`;
+  });
+
+  // Remember phrase button logic
+  rememberBtn.addEventListener("click", () => {
+    const password = rememberBtn.dataset.password;
+    fetch("/remember-phrase/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+      },
+      body: JSON.stringify({ password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      rememberOutputCard.classList.remove("hidden");
+      rememberOutput.textContent = `💡 ${data.phrase || "Unable to generate phrase."}`;
+    });
+  });
+
+  const unpredictableBtn = document.getElementById("unpredictable-btn");
+
+unpredictableBtn.addEventListener("click", () => {
+  const original = input.value;
+  if (original.length < 4) return;
+
+  unpredictableBtn.textContent = "⏳ Thinking...";
+  unpredictableBtn.disabled = true;
+
+  fetch("/make-unpredictable/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCookie("csrftoken")
+    },
+    body: JSON.stringify({ password: original })
+  })
+  .then(res => res.json())
+  .then(data => {
+    unpredictableBtn.textContent = "🎲 Make It Unpredictable";
+    unpredictableBtn.disabled = false;
+
+    if (data.stronger) {
+      input.value = data.stronger;
+      input.dispatchEvent(new Event("input"));
+      rememberBtn.classList.remove("hidden");
+      rememberBtn.dataset.password = data.stronger;
+    } else {
+      alert("Could not generate a better password.");
+    }
+  });
+});
+
+
+  const ctxPie = document.getElementById("compositionChart").getContext("2d");
+  const ctxBar = document.getElementById("crackTimeChart").getContext("2d");
+
+  let pieChart = new Chart(ctxPie, {
+    type: "pie",
+    data: {
+      labels: ["Letters", "Numbers", "Symbols"],
+      datasets: [{
+        data: [0, 0, 0],
+        backgroundColor: ["#60A5FA", "#FBBF24", "#F87171"],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" }
+      }
+    }
+  });
+
+  let barChart = new Chart(ctxBar, {
+    type: "bar",
+    data: {
+      labels: ["Online (throttled)", "Online (unthrottled)", "Offline (slow)", "Offline (fast)"],
+      datasets: [{
+        label: "Time to Crack",
+        data: [0, 0, 0, 0],
+        backgroundColor: "#4ADE80"
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: {
+        x: {
+          ticks: {
+            callback: function(value) {
+              return value >= 1 ? value + " yrs" : "< 1 yr";
+            }
+          }
+        }
+      }
+    }
+  });
+
+  function countTypes(password) {
+    let letters = 0, numbers = 0, symbols = 0;
+    for (let ch of password) {
+      if (/[a-zA-Z]/.test(ch)) letters++;
+      else if (/\d/.test(ch)) numbers++;
+      else symbols++;
+    }
+    return [letters, numbers, symbols];
+  }
+
+  function estimateToYears(label) {
+    if (!label || typeof label !== "string") return 0;
+  
+    const unitsToYears = {
+      second: 1 / 31536000,
+      seconds: 1 / 31536000,
+      minute: 1 / 525600,
+      minutes: 1 / 525600,
+      hour: 1 / 8760,
+      hours: 1 / 8760,
+      day: 1 / 365,
+      days: 1 / 365,
+      month: 1 / 12,
+      months: 1 / 12,
+      year: 1,
+      years: 1,
+      century: 100,
+      centuries: 100
+    };
+  
+    // Handle values like "centuries" without a number (assume 100)
+    if (label.trim().toLowerCase() === "centuries") return 100;
+  
+    // Match patterns like "17 minutes", "31 years", etc.
+    const regex = /([\d.,]+)\s*(seconds?|minutes?|hours?|days?|months?|years?|centuries?)/i;
+    const match = label.match(regex);
+  
+    if (!match) return 0;
+  
+    const value = parseFloat(match[1].replace(/,/g, ""));
+    const unit = match[2].toLowerCase();
+    const converted = value * (unitsToYears[unit] || 0);
+  
+    return parseFloat(converted.toFixed(2));
+  }
+  
+  
+  
+
+  function updateCharts(password, crackTimes) {
+    const [letters, numbers, symbols] = countTypes(password);
+    pieChart.data.datasets[0].data = [letters, numbers, symbols];
+    pieChart.update();
+  
+    const crackValues = [
+    estimateToYears(crackTimes.online_throttling_100_per_hour),
+    estimateToYears(crackTimes.online_no_throttling_10_per_second),
+    estimateToYears(crackTimes.offline_slow_hashing_1e4_per_second),
+    estimateToYears(crackTimes.offline_fast_hashing_1e10_per_second)
+  ];
+  
+    barChart.data.datasets[0].data = crackValues;
+    barChart.update();
+  }
+  
+
+  // Hook this into your existing .then(data => { ... })
+  // After updating score and feedback:
+  // 👇 Add this lin
+  document.getElementById("use-password-btn").addEventListener("click", () => {
+    const password = document.getElementById("use-password-btn").dataset.password;
+  
+    fetch("/save-password/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCookie("csrftoken")
+      },
+      body: JSON.stringify({ password })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const usedWarning = document.getElementById("used-warning");
+      if (data.exists) {
+        usedWarning.textContent = "⚠️ You have already used this password before.";
+        usedWarning.classList.remove("hidden");
+      } else {
+        usedWarning.classList.add("hidden");
+        alert("✅ Password saved securely.");
+      }
+    });
+  });
+  
+  // Intro popup dismissal
+document.addEventListener("DOMContentLoaded", () => {
+  const popup = document.getElementById("intro-popup");
+  const startBtn = document.getElementById("start-btn");
+
+  if (popup && startBtn) {
+    startBtn.addEventListener("click", () => {
+      popup.classList.add("hidden");
+    });
+  }
+});
+
+</script>
+{% endblock %}

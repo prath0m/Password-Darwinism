@@ -1,1 +1,1 @@
-"# Password-Darwinism" 
+Created an AI-based application that analyzes password strength better than  the traditional metrics using  GenAI and Machine Learning. The application would estimate how long it takes to break a particular password (Time To Crack), identify vulnerabilities using possible leaked password datasets, and give real-time, dynamic suggestions to the user to improve passwords.
